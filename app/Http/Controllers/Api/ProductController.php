@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -30,6 +31,14 @@ class ProductController extends Controller
         $perPage = $request->input('per_page', 12);
         $products = $query->paginate($perPage);
 
+        // Add full image URLs to each product
+        $products->getCollection()->transform(function ($product) {
+            if ($product->image) {
+                $product->image_url = Storage::url($product->image);
+            }
+            return $product;
+        });
+
         return response()->json($products);
     }
 
@@ -40,12 +49,23 @@ class ProductController extends Controller
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
-            'image' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'category' => 'nullable|string|max:255',
             'is_active' => 'boolean'
         ]);
 
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('products', 'public');
+            $validated['image'] = $path;
+        }
+
         $product = Product::create($validated);
+
+        // Return product with full image URL
+        if ($product->image) {
+            $product->image_url = Storage::url($product->image);
+        }
 
         return response()->json([
             'message' => 'Product created successfully',
@@ -55,6 +75,9 @@ class ProductController extends Controller
 
     public function show(Product $product)
     {
+        if ($product->image) {
+            $product->image_url = Storage::url($product->image);
+        }
         return response()->json($product);
     }
 
@@ -65,12 +88,27 @@ class ProductController extends Controller
             'description' => 'sometimes|required|string',
             'price' => 'sometimes|required|numeric|min:0',
             'stock' => 'sometimes|required|integer|min:0',
-            'image' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'category' => 'nullable|string|max:255',
             'is_active' => 'boolean'
         ]);
 
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
+            }
+            $path = $request->file('image')->store('products', 'public');
+            $validated['image'] = $path;
+        }
+
         $product->update($validated);
+
+        // Return product with full image URL
+        if ($product->image) {
+            $product->image_url = Storage::url($product->image);
+        }
 
         return response()->json([
             'message' => 'Product updated successfully',
@@ -80,6 +118,11 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
+        // Delete image if exists
+        if ($product->image) {
+            Storage::disk('public')->delete($product->image);
+        }
+
         $product->delete();
 
         return response()->json([
