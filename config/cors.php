@@ -19,7 +19,11 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:4200', 'http://localhost:8000'],
+    'allowed_origins' => [
+        'http://localhost:4200',
+        'http://localhost:8000',
+        'https://fresh-vibes.runasp.net',
+    ],
 
     'allowed_origins_patterns' => [],
 
