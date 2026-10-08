@@ -9,6 +9,15 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
+    public function image(string $filename)
+    {
+        $path = 'products/'.$filename;
+
+        abort_unless(Storage::disk('public')->exists($path), 404);
+
+        return Storage::disk('public')->response($path);
+    }
+
     public function index(Request $request)
     {
         $query = Product::where('is_active', true);

@@ -11,6 +11,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/contact', [ContactController::class, 'store']);
 
 // Public product routes (for website)
+Route::get('/storage/products/{filename}', [ProductController::class, 'image'])
+    ->where('filename', '[A-Za-z0-9_-]+\.(jpg|jpeg|png|gif|webp)');
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{product}', [ProductController::class, 'show']);
 
